@@ -1,16 +1,21 @@
 import { CanvasManager } from "./CanvasManager";
 import { Tool } from "./tools/Tool";
 import { PenTool } from "./tools/PenTool";
+import { ToolState } from "./tools/ToolState";
+
 
 export class ToolManager {
     cm: CanvasManager;
+    toolState: ToolState;
     tool: Tool;
-    drawing = false;
+    drawing = false; 
 
     constructor(cm: CanvasManager) {
         this.cm = cm;
-        this.tool = new PenTool();
+        this.toolState = new ToolState();
+        this.tool = new PenTool(this.toolState);
     }
+
 
     bindEvents() {
         const board = this.cm.boardEl;

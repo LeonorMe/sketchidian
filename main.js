@@ -78,20 +78,19 @@ var CanvasManager = class {
 
 // src/drawing/tools/PenTool.ts
 var PenTool = class {
-  constructor() {
+  constructor(state) {
     this.name = "pen";
-    this.color = "#f0ebe3";
-    this.size = 2;
     this.lastX = 0;
     this.lastY = 0;
+    this.state = state;
   }
   onDown(ctx, x, y) {
     this.lastX = x;
     this.lastY = y;
   }
   onMove(ctx, x, y) {
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = this.size;
+    ctx.strokeStyle = this.state.color;
+    ctx.lineWidth = this.state.size;
     ctx.beginPath();
     ctx.moveTo(this.lastX, this.lastY);
     ctx.lineTo(x, y);
@@ -100,6 +99,14 @@ var PenTool = class {
     this.lastY = y;
   }
   onUp() {
+  }
+};
+
+// src/drawing/tools/ToolState.ts
+var ToolState = class {
+  constructor() {
+    this.color = "#f5eeee";
+    this.size = 2;
   }
 };
 
@@ -128,7 +135,8 @@ var ToolManager = class {
       this.tool.onUp(this.cm.getActiveCtx());
     };
     this.cm = cm;
-    this.tool = new PenTool();
+    this.toolState = new ToolState();
+    this.tool = new PenTool(this.toolState);
   }
   bindEvents() {
     const board = this.cm.boardEl;
