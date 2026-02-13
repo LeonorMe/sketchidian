@@ -17,10 +17,15 @@ export default class SketchWhiteboardPlugin extends Plugin {
     }
 
     async openWhiteboard() {
-        const leaf = this.app.workspace.getLeaf(true);
+        const leaf = this.app.workspace.getLeaf("tab");
+
         await leaf.setViewState({
             type: DRAWING_VIEW_TYPE,
-            active: true
+            active: true,
+            state: {}
         });
+
+        this.app.workspace.revealLeaf(leaf);
     }
+
 }

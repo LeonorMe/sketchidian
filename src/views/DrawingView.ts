@@ -1,11 +1,14 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { CanvasManager } from "../drawing/CanvasManager";
+import { ToolManager } from "../drawing/ToolManager";
+
 
 
 export const DRAWING_VIEW_TYPE = "sketch-whiteboard-view";
 
 export class DrawingView extends ItemView {
-    canvasManager?: CanvasManager;
+    canvasManager!: CanvasManager;
+    toolManager!: ToolManager;
 
     constructor(leaf: WorkspaceLeaf) {
         super(leaf);
@@ -20,11 +23,19 @@ export class DrawingView extends ItemView {
     }
 
     async onOpen() {
-        const container = this.containerEl.children[1] as HTMLElement;
-        container.empty();
+        const content = this.contentEl;
+        content.empty();
 
-        this.canvasManager = new CanvasManager(container);
+        content.style.width = "100%";
+        content.style.height = "100%";
+        content.style.position = "relative";
+
+        this.canvasManager = new CanvasManager(content);
         this.canvasManager.initialize();
+
+        this.toolManager = new ToolManager(this.canvasManager);
+        this.toolManager.bindEvents();
     }
+
 }
 

@@ -42,43 +42,80 @@ var CanvasManager = class {
     for (let i = 0; i < 3; i++) {
       const canvas = document.createElement("canvas");
       canvas.className = "sketch-layer";
+      canvas.style.touchAction = "none";
       const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas 2D context not available");
+      if (!ctx) throw new Error("No 2D context");
       this.boardEl.appendChild(canvas);
-      this.layers.push({
-        canvas,
-        ctx,
-        visible: true,
-        locked: false
-      });
+      this.layers.push({ canvas, ctx });
     }
     this.resize();
-    this.bindResize();
-  }
-  bindResize() {
     window.addEventListener("resize", () => this.resize());
   }
   resize() {
     const rect = this.boardEl.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    this.layers.forEach((layer) => {
-      const canvas = layer.canvas;
-      const ctx = layer.ctx;
+    for (const layer of this.layers) {
+      const { canvas, ctx } = layer;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-    });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    }
   }
-  getActiveLayer() {
-    return this.layers[this.activeLayerIndex];
+  getActiveCtx() {
+    return this.layers[this.activeLayerIndex].ctx;
   }
-  setActiveLayer(index) {
-    if (index < 0 || index > 2) return;
-    this.activeLayerIndex = index;
+  getBoardRect() {
+    return this.boardEl.getBoundingClientRect();
+  }
+};
+
+// src/drawing/ToolManager.ts
+var ToolManager = class {
+  constructor(cm) {
+    this.drawing = false;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.onDown = (e) => {
+      if (e.button !== 0) return;
+      const rect = this.cm.getBoardRect();
+      this.lastX = e.clientX - rect.left;
+      this.lastY = e.clientY - rect.top;
+      this.drawing = true;
+    };
+    this.onMove = (e) => {
+      if (!this.drawing) return;
+      const ctx = this.cm.getActiveCtx();
+      const rect = this.cm.getBoardRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      ctx.strokeStyle = "#ff0000";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(this.lastX, this.lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      this.lastX = x;
+      this.lastY = y;
+    };
+    this.onUp = () => {
+      this.drawing = false;
+    };
+    this.cm = cm;
+  }
+  bindEvents() {
+    const board = this.cm.boardEl;
+    board.addEventListener("pointerdown", this.onDown);
+    board.addEventListener("pointermove", this.onMove);
+    board.addEventListener("pointerup", this.onUp);
+    board.addEventListener("pointerleave", this.onUp);
+    board.addEventListener("pointercancel", this.onUp);
   }
 };
 
@@ -95,10 +132,15 @@ var DrawingView = class extends import_obsidian.ItemView {
     return "Sketch Whiteboard";
   }
   async onOpen() {
-    const container = this.containerEl.children[1];
-    container.empty();
-    this.canvasManager = new CanvasManager(container);
+    const content = this.contentEl;
+    content.empty();
+    content.style.width = "100%";
+    content.style.height = "100%";
+    content.style.position = "relative";
+    this.canvasManager = new CanvasManager(content);
     this.canvasManager.initialize();
+    this.toolManager = new ToolManager(this.canvasManager);
+    this.toolManager.bindEvents();
   }
 };
 
@@ -116,11 +158,13 @@ var SketchWhiteboardPlugin = class extends import_obsidian2.Plugin {
     });
   }
   async openWhiteboard() {
-    const leaf = this.app.workspace.getLeaf(true);
+    const leaf = this.app.workspace.getLeaf("tab");
     await leaf.setViewState({
       type: DRAWING_VIEW_TYPE,
-      active: true
+      active: true,
+      state: {}
     });
+    this.app.workspace.revealLeaf(leaf);
   }
 };
 //# sourceMappingURL=main.js.map

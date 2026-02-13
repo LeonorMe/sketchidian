@@ -1,8 +1,6 @@
 export interface CanvasLayer {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
-    visible: boolean;
-    locked: boolean;
 }
 
 export class CanvasManager {
@@ -16,34 +14,23 @@ export class CanvasManager {
     }
 
     initialize() {
-        // Board wrapper
         this.boardEl = document.createElement("div");
         this.boardEl.className = "sketch-board";
         this.container.appendChild(this.boardEl);
 
-        // Create 3 layers
         for (let i = 0; i < 3; i++) {
             const canvas = document.createElement("canvas");
             canvas.className = "sketch-layer";
+            canvas.style.touchAction = "none";
 
             const ctx = canvas.getContext("2d");
-            if (!ctx) throw new Error("Canvas 2D context not available");
+            if (!ctx) throw new Error("No 2D context");
 
             this.boardEl.appendChild(canvas);
-
-            this.layers.push({
-                canvas,
-                ctx,
-                visible: true,
-                locked: false
-            });
+            this.layers.push({ canvas, ctx });
         }
 
         this.resize();
-        this.bindResize();
-    }
-
-    bindResize() {
         window.addEventListener("resize", () => this.resize());
     }
 
@@ -51,28 +38,30 @@ export class CanvasManager {
         const rect = this.boardEl.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
 
-        this.layers.forEach((layer) => {
-            const canvas = layer.canvas;
-            const ctx = layer.ctx;
+        for (const layer of this.layers) {
+            const { canvas, ctx } = layer;
 
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
 
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = rect.width + "px";
+            canvas.style.height = rect.height + "px";
 
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
-        });
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = "source-over";
+        }
     }
 
-    getActiveLayer(): CanvasLayer {
-        return this.layers[this.activeLayerIndex];
+    getActiveCtx(): CanvasRenderingContext2D {
+        return this.layers[this.activeLayerIndex].ctx;
     }
 
-    setActiveLayer(index: number) {
-        if (index < 0 || index > 2) return;
-        this.activeLayerIndex = index;
+    getBoardRect(): DOMRect {
+        return this.boardEl.getBoundingClientRect();
     }
 }
