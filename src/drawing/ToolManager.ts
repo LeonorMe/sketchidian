@@ -1,13 +1,15 @@
 import { CanvasManager } from "./CanvasManager";
+import { Tool } from "./tools/Tool";
+import { PenTool } from "./tools/PenTool";
 
 export class ToolManager {
     cm: CanvasManager;
+    tool: Tool;
     drawing = false;
-    lastX = 0;
-    lastY = 0;
 
     constructor(cm: CanvasManager) {
         this.cm = cm;
+        this.tool = new PenTool();
     }
 
     bindEvents() {
@@ -24,34 +26,26 @@ export class ToolManager {
         if (e.button !== 0) return;
 
         const rect = this.cm.getBoardRect();
-        this.lastX = e.clientX - rect.left;
-        this.lastY = e.clientY - rect.top;
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
         this.drawing = true;
+        this.tool.onDown(this.cm.getActiveCtx(), x, y);
     };
 
     onMove = (e: PointerEvent) => {
         if (!this.drawing) return;
 
-        const ctx = this.cm.getActiveCtx();
         const rect = this.cm.getBoardRect();
-
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        ctx.strokeStyle = "#ff0000"; 
-        ctx.lineWidth = 5;
-
-        ctx.beginPath();
-        ctx.moveTo(this.lastX, this.lastY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        this.lastX = x;
-        this.lastY = y;
+        this.tool.onMove(this.cm.getActiveCtx(), x, y);
     };
 
     onUp = () => {
+        if (!this.drawing) return;
         this.drawing = false;
+        this.tool.onUp(this.cm.getActiveCtx());
     };
 }

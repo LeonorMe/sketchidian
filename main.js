@@ -76,38 +76,59 @@ var CanvasManager = class {
   }
 };
 
+// src/drawing/tools/PenTool.ts
+var PenTool = class {
+  constructor() {
+    this.name = "pen";
+    this.color = "#f0ebe3";
+    this.size = 2;
+    this.lastX = 0;
+    this.lastY = 0;
+  }
+  onDown(ctx, x, y) {
+    this.lastX = x;
+    this.lastY = y;
+  }
+  onMove(ctx, x, y) {
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.size;
+    ctx.beginPath();
+    ctx.moveTo(this.lastX, this.lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    this.lastX = x;
+    this.lastY = y;
+  }
+  onUp() {
+  }
+};
+
 // src/drawing/ToolManager.ts
 var ToolManager = class {
   constructor(cm) {
     this.drawing = false;
-    this.lastX = 0;
-    this.lastY = 0;
     this.onDown = (e) => {
       if (e.button !== 0) return;
       const rect = this.cm.getBoardRect();
-      this.lastX = e.clientX - rect.left;
-      this.lastY = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       this.drawing = true;
+      this.tool.onDown(this.cm.getActiveCtx(), x, y);
     };
     this.onMove = (e) => {
       if (!this.drawing) return;
-      const ctx = this.cm.getActiveCtx();
       const rect = this.cm.getBoardRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      ctx.strokeStyle = "#ff0000";
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(this.lastX, this.lastY);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      this.lastX = x;
-      this.lastY = y;
+      this.tool.onMove(this.cm.getActiveCtx(), x, y);
     };
     this.onUp = () => {
+      if (!this.drawing) return;
       this.drawing = false;
+      this.tool.onUp(this.cm.getActiveCtx());
     };
     this.cm = cm;
+    this.tool = new PenTool();
   }
   bindEvents() {
     const board = this.cm.boardEl;
