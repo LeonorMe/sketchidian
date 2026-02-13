@@ -27,6 +27,62 @@ var import_obsidian2 = require("obsidian");
 
 // src/views/DrawingView.ts
 var import_obsidian = require("obsidian");
+
+// src/drawing/CanvasManager.ts
+var CanvasManager = class {
+  constructor(container) {
+    this.layers = [];
+    this.activeLayerIndex = 0;
+    this.container = container;
+  }
+  initialize() {
+    this.boardEl = document.createElement("div");
+    this.boardEl.className = "sketch-board";
+    this.container.appendChild(this.boardEl);
+    for (let i = 0; i < 3; i++) {
+      const canvas = document.createElement("canvas");
+      canvas.className = "sketch-layer";
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D context not available");
+      this.boardEl.appendChild(canvas);
+      this.layers.push({
+        canvas,
+        ctx,
+        visible: true,
+        locked: false
+      });
+    }
+    this.resize();
+    this.bindResize();
+  }
+  bindResize() {
+    window.addEventListener("resize", () => this.resize());
+  }
+  resize() {
+    const rect = this.boardEl.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    this.layers.forEach((layer) => {
+      const canvas = layer.canvas;
+      const ctx = layer.ctx;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    });
+  }
+  getActiveLayer() {
+    return this.layers[this.activeLayerIndex];
+  }
+  setActiveLayer(index) {
+    if (index < 0 || index > 2) return;
+    this.activeLayerIndex = index;
+  }
+};
+
+// src/views/DrawingView.ts
 var DRAWING_VIEW_TYPE = "sketch-whiteboard-view";
 var DrawingView = class extends import_obsidian.ItemView {
   constructor(leaf) {
@@ -41,9 +97,8 @@ var DrawingView = class extends import_obsidian.ItemView {
   async onOpen() {
     const container = this.containerEl.children[1];
     container.empty();
-    const info = document.createElement("div");
-    info.setText("Sketch Whiteboard loaded.");
-    container.appendChild(info);
+    this.canvasManager = new CanvasManager(container);
+    this.canvasManager.initialize();
   }
 };
 
