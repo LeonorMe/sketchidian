@@ -1,0 +1,10 @@
+{
+    "id": "sketchidian",
+    "name": "Sketchidian",
+    "version": "0.1.0",
+    "minAppVersion": "1.5.0",
+    "description": "Lightweight sketching whiteboard for Obsidian.",
+    "author": "Leonor Medeiros",
+    "authorUrl": "https://github.com/LeonorMe",
+    "isDesktopOnly": false
+}
