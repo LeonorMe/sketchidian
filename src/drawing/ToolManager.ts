@@ -100,4 +100,27 @@ export class ToolManager {
     }
 
 
+    getBoundingBox(margin = 6) {
+        if (this.strokes.length === 0) return null;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        for (const stroke of this.strokes) {
+            for (const p of stroke.points) {
+                if (p.x < minX) minX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y > maxY) maxY = p.y;
+            }
+        }
+
+        // add margin
+        minX = Math.max(minX - margin, 0);
+        minY = Math.max(minY - margin, 0);
+        maxX += margin;
+        maxY += margin;
+
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    }
+
 }

@@ -65,15 +65,61 @@ export class CanvasManager {
         return this.boardEl.getBoundingClientRect();
     }
 
+    /** 
+     * Export the strokes as a cropped PNG based on bounding box of all strokes
+     * @param strokes Array of strokes from ToolManager
+     */
+    async exportPNG(strokes: Array<{ points: { x: number; y: number }[]; color: string; size: number }>): Promise<Blob> {
+        // Return 1x1 transparent PNG if no strokes
+        if (!strokes || strokes.length === 0) {
+            const c = document.createElement("canvas");
+            c.width = 1;
+            c.height = 1;
+            return new Promise((res) => c.toBlob((b) => res(b!), "image/png"));
+        }
 
-    async exportPNG(): Promise<Blob> {
-        const layer = this.layers[0]; // simples por agora
-        return new Promise((resolve) => {
-            layer.canvas.toBlob((blob) => {
-                if (!blob) throw new Error("Failed to export PNG");
-                resolve(blob);
-            }, "image/png");
-        });
+        // Calculate bounding box for all strokes
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        const margin = 6; // pixels around strokes
+
+        for (const stroke of strokes) {
+            for (const p of stroke.points) {
+                if (p.x < minX) minX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y > maxY) maxY = p.y;
+            }
+        }
+
+        minX = Math.max(minX - margin, 0);
+        minY = Math.max(minY - margin, 0);
+        maxX += margin;
+        maxY += margin;
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        // Create temporary canvas to draw cropped image
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const ctx = tempCanvas.getContext("2d")!;
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw each stroke on the temporary canvas, offset by bounding box
+        for (const stroke of strokes) {
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.size;
+            ctx.beginPath();
+            for (let i = 1; i < stroke.points.length; i++) {
+                const p0 = stroke.points[i - 1];
+                const p1 = stroke.points[i];
+                ctx.moveTo(p0.x - minX, p0.y - minY);
+                ctx.lineTo(p1.x - minX, p1.y - minY);
+                ctx.stroke();
+            }
+        }
+
+        return new Promise((resolve) => tempCanvas.toBlob((b) => resolve(b!), "image/png"));
     }
-
 }

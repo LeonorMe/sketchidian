@@ -3,7 +3,6 @@ import { CanvasManager } from "../drawing/CanvasManager";
 import { ToolManager } from "../drawing/ToolManager";
 
 
-
 export const DRAWING_VIEW_TYPE = "sketch-whiteboard-view";
 
 export class DrawingView extends ItemView {
@@ -59,8 +58,6 @@ export class DrawingView extends ItemView {
         
 
 
-
-
         this.canvasManager = new CanvasManager(content);
         this.canvasManager.initialize();
 
@@ -69,19 +66,27 @@ export class DrawingView extends ItemView {
     }
 
     async saveImage() {
-        const blob = await this.canvasManager.exportPNG();
+        // Get strokes from ToolManager
+        const strokes = this.toolManager.strokes;
+
+        // Export PNG with bounding box crop
+        const blob = await this.canvasManager.exportPNG(strokes);
         const arrayBuffer = await blob.arrayBuffer();
 
+        // Folder and file path
         const folderPath = "Sketches";
         const fileName = `sketch-${Date.now()}.png`;
         const fullPath = `${folderPath}/${fileName}`;
 
+        // Create folder if it does not exist
         if (!this.app.vault.getAbstractFileByPath(folderPath)) {
             await this.app.vault.createFolder(folderPath);
         }
 
+        // Save PNG in vault
         await this.app.vault.createBinary(fullPath, arrayBuffer);
 
+        // Copy markdown image link to clipboard
         await navigator.clipboard.writeText(`![[${fullPath}]]`);
     }
 
