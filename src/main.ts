@@ -14,6 +14,10 @@ export default class SketchWhiteboardPlugin extends Plugin {
             name: "Open Sketch Whiteboard",
             callback: () => this.openWhiteboard()
         });
+
+        this.addRibbonIcon("pencil", "Open Sketch Whiteboard", async () => {
+            await this.openWhiteboard();
+        });
     }
 
     async openWhiteboard() {

@@ -258,6 +258,9 @@ var SketchWhiteboardPlugin = class extends import_obsidian2.Plugin {
       name: "Open Sketch Whiteboard",
       callback: () => this.openWhiteboard()
     });
+    this.addRibbonIcon("pencil", "Open Sketch Whiteboard", async () => {
+      await this.openWhiteboard();
+    });
   }
   async openWhiteboard() {
     const leaf = this.app.workspace.getLeaf("tab");
