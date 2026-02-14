@@ -123,25 +123,34 @@ var ToolState = class {
 var ToolManager = class {
   constructor(cm) {
     this.drawing = false;
+    this.strokes = [];
+    this.currentStroke = null;
     this.onDown = (e) => {
       if (e.button !== 0) return;
       const rect = this.cm.getBoardRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       this.drawing = true;
+      this.currentStroke = {
+        points: [{ x, y }],
+        color: this.toolState.color,
+        size: this.toolState.size
+      };
       this.tool.onDown(this.cm.getActiveCtx(), x, y);
     };
     this.onMove = (e) => {
-      if (!this.drawing) return;
+      if (!this.drawing || !this.currentStroke) return;
       const rect = this.cm.getBoardRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      this.currentStroke.points.push({ x, y });
       this.tool.onMove(this.cm.getActiveCtx(), x, y);
     };
     this.onUp = () => {
-      if (!this.drawing) return;
+      if (!this.drawing || !this.currentStroke) return;
+      this.strokes.push(this.currentStroke);
+      this.currentStroke = null;
       this.drawing = false;
-      this.tool.onUp(this.cm.getActiveCtx());
     };
     this.cm = cm;
     this.toolState = new ToolState();
@@ -154,6 +163,30 @@ var ToolManager = class {
     board.addEventListener("pointerup", this.onUp);
     board.addEventListener("pointerleave", this.onUp);
     board.addEventListener("pointercancel", this.onUp);
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        this.undo();
+      }
+    });
+  }
+  undo() {
+    if (this.strokes.length === 0) return;
+    this.strokes.pop();
+    const ctx = this.cm.getActiveCtx();
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    for (const stroke of this.strokes) {
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.beginPath();
+      for (let i = 1; i < stroke.points.length; i++) {
+        const p0 = stroke.points[i - 1];
+        const p1 = stroke.points[i];
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+    }
   }
 };
 

@@ -56,6 +56,7 @@ export class DrawingView extends ItemView {
         saveBtn.onclick = async () => {
             await this.saveImage();
         };
+        
 
 
 
