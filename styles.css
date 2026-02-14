@@ -12,3 +12,16 @@
     position: absolute;
     inset: 0;
 }
+
+.sketch-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: 8px;
+    padding: 6px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.sketch-toolbar input[type="range"] {
+    width: 100px;
+}

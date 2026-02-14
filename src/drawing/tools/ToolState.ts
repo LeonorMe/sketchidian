@@ -1,4 +1,4 @@
 export class ToolState {
-    color = "#f5eeee";
+    color = "#ffffff";
     size = 2;
 }

@@ -30,12 +30,60 @@ export class DrawingView extends ItemView {
         content.style.height = "100%";
         content.style.position = "relative";
 
+
+        const toolbar = content.createDiv("sketch-toolbar");
+        
+        const colorInput = toolbar.createEl("input");
+        colorInput.type = "color";
+        colorInput.value = "#ffffff";
+
+        colorInput.onchange = () => {
+            this.toolManager.toolState.color = colorInput.value;
+        };
+
+        const sizeInput = toolbar.createEl("input");
+        sizeInput.type = "range";
+        sizeInput.min = "1";
+        sizeInput.max = "20";
+        sizeInput.value = "2";
+
+        sizeInput.oninput = () => {
+            this.toolManager.toolState.size = Number(sizeInput.value);
+        };
+
+        const saveBtn = toolbar.createEl("button", { text: "Guardar" });
+
+        saveBtn.onclick = async () => {
+            await this.saveImage();
+        };
+
+
+
+
         this.canvasManager = new CanvasManager(content);
         this.canvasManager.initialize();
 
         this.toolManager = new ToolManager(this.canvasManager);
         this.toolManager.bindEvents();
     }
+
+    async saveImage() {
+        const blob = await this.canvasManager.exportPNG();
+        const arrayBuffer = await blob.arrayBuffer();
+
+        const folderPath = "Sketches";
+        const fileName = `sketch-${Date.now()}.png`;
+        const fullPath = `${folderPath}/${fileName}`;
+
+        if (!this.app.vault.getAbstractFileByPath(folderPath)) {
+            await this.app.vault.createFolder(folderPath);
+        }
+
+        await this.app.vault.createBinary(fullPath, arrayBuffer);
+
+        await navigator.clipboard.writeText(`![[${fullPath}]]`);
+    }
+
 
 }
 

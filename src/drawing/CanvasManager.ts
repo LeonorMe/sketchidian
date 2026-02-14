@@ -64,4 +64,16 @@ export class CanvasManager {
     getBoardRect(): DOMRect {
         return this.boardEl.getBoundingClientRect();
     }
+
+
+    async exportPNG(): Promise<Blob> {
+        const layer = this.layers[0]; // simples por agora
+        return new Promise((resolve) => {
+            layer.canvas.toBlob((blob) => {
+                if (!blob) throw new Error("Failed to export PNG");
+                resolve(blob);
+            }, "image/png");
+        });
+    }
+
 }

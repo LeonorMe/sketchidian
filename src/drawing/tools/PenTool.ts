@@ -11,8 +11,8 @@ export class PenTool implements Tool {
     constructor(state: ToolState) {
         this.state = state;
     }
-    color: string;
-    size: number;
+    color!: string;
+    size!: number;
 
     onDown(ctx: CanvasRenderingContext2D, x: number, y: number) {
         this.lastX = x;
